@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Token Triage Demo — v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background: #0f1117; color: #e2e8f0; font-family: system-ui, sans-serif; }
+  code, .mono { font-family: 'Courier New', monospace; }
+  .terminal-header { background: #1a1d2e; border-radius: 8px 8px 0 0; padding: 0.5rem 1rem; border: 1px solid #2d3748; border-bottom: none; display: flex; align-items: center; gap: 0.4rem; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .terminal { background: #141820; border: 1px solid #2d3748; border-radius: 0 0 8px 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+  .prompt { color: #68d391; }
+  .cmd { color: #90cdf4; }
+  .comment { color: #4a5568; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th { background: #1e2535; color: #90cdf4; padding: 0.45rem 0.75rem; text-align: left; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #1e2535; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1a1f2e; }
+  .card { background: #141820; border: 1px solid #2d3748; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .stat-num { font-size: 1.75rem; font-weight: 700; color: #fff; line-height: 1; }
+  .stat-label { font-size: 0.65rem; color: #718096; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.15rem; }
+  .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; }
+  .badge-high { background: #7c1d1d; color: #fc8181; }
+  .badge-med { background: #7c4a1d; color: #f6ad55; }
+  .bar-container { height: 6px; background: #2d3748; border-radius: 3px; overflow: hidden; margin-top: 0.3rem; }
+  .bar-fill { height: 100%; border-radius: 3px; }
+  .bar-opus { background: #7b5cf0; }
+  .bar-sonnet { background: #3b82f6; }
+  .bar-haiku { background: #10b981; }
+  .cache-good { color: #68d391; }
+  .cache-warn { color: #f6ad55; }
+  .cache-bad { color: #fc8181; }
+  .finding-card { border-left: 3px solid; padding: 0.75rem 1rem; background: #141820; border-radius: 0 6px 6px 0; margin-bottom: 0.75rem; }
+  .finding-high { border-color: #fc8181; }
+  .finding-med { border-color: #f6ad55; }
+  .rec-text { font-size: 0.78rem; color: #a0aec0; line-height: 1.5; margin-top: 0.4rem; }
+  .evidence-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; margin: 0.5rem 0; }
+  .ev-item { background: #1a1d2e; border-radius: 4px; padding: 0.3rem 0.5rem; }
+  .ev-key { font-size: 0.6rem; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; }
+  .ev-val { font-size: 0.75rem; color: #e2e8f0; font-family: monospace; margin-top: 0.1rem; }
+  .section-label { font-size: 0.65rem; color: #4a5568; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; font-weight: 600; }
+</style>
+</head>
+<body class="p-6 max-w-4xl mx-auto">
+
+<!-- HEADER -->
+<div class="mb-6">
+  <div class="flex items-baseline gap-3 mb-1">
+    <h1 class="text-2xl font-bold text-white">Token Triage</h1>
+    <span class="text-sm text-gray-500 mono">v0.1.0</span>
+  </div>
+  <p class="text-sm text-gray-400">Find your Claude Code burn before your bill does</p>
+</div>
+
+<!-- TERMINAL INVOCATION -->
+<div>
+  <div class="terminal-header">
+    <div class="dot" style="background:#ff5f57"></div>
+    <div class="dot" style="background:#febc2e"></div>
+    <div class="dot" style="background:#28c840"></div>
+    <span class="text-xs text-gray-500 ml-2">terminal</span>
+  </div>
+  <div class="terminal mono text-sm">
+    <div><span class="prompt">$</span> <span class="cmd">token-triage --projects-dir ./demo-data</span></div>
+    <div class="mt-2 text-gray-400 text-xs"><span class="comment"># Window: 2026-04-01 → 2026-04-02 · 67 records · 3 projects</span></div>
+  </div>
+</div>
+
+<!-- TOP-LINE STATS -->
+<div class="grid grid-cols-4 gap-3 mb-4">
+  <div class="card">
+    <div class="stat-num text-green-400">$4.47</div>
+    <div class="stat-label">total spend</div>
+  </div>
+  <div class="card">
+    <div class="stat-num">67</div>
+    <div class="stat-label">turns</div>
+  </div>
+  <div class="card">
+    <div class="stat-num">3</div>
+    <div class="stat-label">projects</div>
+  </div>
+  <div class="card">
+    <div class="stat-num text-purple-400">77.8%</div>
+    <div class="stat-label">opus share</div>
+  </div>
+</div>
+
+<!-- MODEL BREAKDOWN VISUAL -->
+<div class="card mb-4">
+  <div class="section-label">Model cost share</div>
+  <div class="space-y-2">
+    <div>
+      <div class="flex justify-between text-sm mb-1">
+        <span class="text-purple-300 mono">claude-opus-4-7</span>
+        <span class="text-white font-semibold">$3.48 <span class="text-gray-500 font-normal text-xs">(77.8%)</span></span>
+      </div>
+      <div class="bar-container"><div class="bar-fill bar-opus" style="width:77.8%"></div></div>
+    </div>
+    <div>
+      <div class="flex justify-between text-sm mb-1">
+        <span class="text-blue-300 mono">claude-sonnet-4-6</span>
+        <span class="text-white font-semibold">$0.99 <span class="text-gray-500 font-normal text-xs">(22.2%)</span></span>
+      </div>
+      <div class="bar-container"><div class="bar-fill bar-sonnet" style="width:22.2%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOP PROJECTS -->
+<div class="card mb-4">
+  <div class="section-label">Top projects by cost</div>
+  <table>
+    <tr>
+      <th>#</th><th>Project</th><th>Cost</th><th>Turns</th><th>Cache reuse</th>
+    </tr>
+    <tr>
+      <td class="text-gray-500">1</td>
+      <td class="mono text-xs">/home/devuser/infra/scripts</td>
+      <td class="font-semibold">$2.21</td>
+      <td>14</td>
+      <td><span class="cache-good">0.83 ✓</span></td>
+    </tr>
+    <tr>
+      <td class="text-gray-500">2</td>
+      <td class="mono text-xs">/home/devuser/ai/coding/cli</td>
+      <td class="font-semibold">$1.27</td>
+      <td>35</td>
+      <td><span class="cache-good">0.78 ✓</span></td>
+    </tr>
+    <tr>
+      <td class="text-gray-500">3</td>
+      <td class="mono text-xs">/home/devuser/revenue/dashboard</td>
+      <td class="font-semibold">$0.99</td>
+      <td>18</td>
+      <td><span class="cache-bad">0.07 ✗</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- FINDINGS -->
+<div class="section-label mt-4">Findings</div>
+
+<div class="finding-card finding-high">
+  <div class="flex items-center gap-2 mb-2">
+    <span class="badge badge-high">HIGH</span>
+    <span class="font-semibold text-white text-sm">Opus calls with short output — likely Sonnet-fit</span>
+  </div>
+  <div class="evidence-grid">
+    <div class="ev-item"><div class="ev-key">calls</div><div class="ev-val">35</div></div>
+    <div class="ev-item"><div class="ev-key">cost</div><div class="ev-val text-red-300">$1.27</div></div>
+    <div class="ev-item"><div class="ev-key">output threshold</div><div class="ev-val">&lt;256 tokens</div></div>
+  </div>
+  <p class="rec-text">Route short, decision-style turns to Sonnet 4.6 — 5x cheaper input, 5x cheaper output at current rates. Reserve Opus for hard reasoning.</p>
+</div>
+
+<div class="finding-card finding-med">
+  <div class="flex items-center gap-2 mb-2">
+    <span class="badge badge-med">MEDIUM</span>
+    <span class="font-semibold text-white text-sm">Low cache-hit ratio on a high-spend project</span>
+  </div>
+  <div class="evidence-grid">
+    <div class="ev-item"><div class="ev-key">project</div><div class="ev-val">revenue/dashboard</div></div>
+    <div class="ev-item"><div class="ev-key">ratio</div><div class="ev-val text-yellow-300">0.07</div></div>
+    <div class="ev-item"><div class="ev-key">cache writes</div><div class="ev-val">216,000</div></div>
+    <div class="ev-item"><div class="ev-key">cache reads</div><div class="ev-val">16,200</div></div>
+  </div>
+  <p class="rec-text">Cache writes cost 1.25× base input; reads cost 0.1×. A ratio below 1.0 means you're paying to fill caches that aren't reused. Look for sessions that rebuild context frequently — frequent /clear or large variable instructions.</p>
+</div>
+
+<div class="finding-card finding-med">
+  <div class="flex items-center gap-2 mb-2">
+    <span class="badge badge-med">MEDIUM</span>
+    <span class="font-semibold text-white text-sm">One session dominates spend</span>
+  </div>
+  <div class="evidence-grid">
+    <div class="ev-item"><div class="ev-key">session</div><div class="ev-val">session-001</div></div>
+    <div class="ev-item"><div class="ev-key">cost</div><div class="ev-val text-yellow-300">$4.47</div></div>
+    <div class="ev-item"><div class="ev-key">share</div><div class="ev-val">100%</div></div>
+  </div>
+  <p class="rec-text">Sessions that grow unboundedly re-pay cache writes as context shifts. Break work into focused sessions; use /compact when crossing ~50% of the context window.</p>
+</div>
+
+<!-- FOOTER -->
+<div class="mt-6 text-xs text-gray-600 border-t border-gray-800 pt-4">
+  <span class="mono">token-triage · synthetic demo · no real session data · <a href="https://github.com/cursed180/Cursed_Token_Triage" class="text-gray-500 hover:text-gray-400">github</a></span>
+</div>
+
+</body>
+</html>

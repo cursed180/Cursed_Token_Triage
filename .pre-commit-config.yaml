@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: privacy-scrub
+        name: privacy scrub
+        entry: python scripts/privacy_scrub.py
+        language: system
+        pass_filenames: true
+        types: [text]
+
+      - id: cursed-public-scan
+        name: public content scan
+        entry: cursed-public-scan --strict
+        language: system
+        pass_filenames: true
+        types: [text]
+
+      - id: cursed-public-scan-commit-msg
+        name: public content scan (commit message)
+        entry: cursed-public-scan --strict
+        language: system
+        stages: [commit-msg]
+        pass_filenames: true
+
+      - id: scan-author-email
+        name: scan author email against allowlist
+        entry: bash -c 'git var GIT_AUTHOR_IDENT | grep -oP "(?<=<)[^>]+" | cursed-public-scan --check-emails --strict --stdin'
+        language: system
+        stages: [commit-msg]
+        pass_filenames: false

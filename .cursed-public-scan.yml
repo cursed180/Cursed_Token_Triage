@@ -1,0 +1,9 @@
+# Per-repo override for cursed-public-scan.
+# Loads repo-shipped pattern defaults; this file only adds/subtracts.
+#
+# allowlist: regexes applied post-scan — hits whose matched_text matches
+#   any entry are suppressed. Case-insensitive.
+allowlist:
+  # This repo is named "Token_Triage" — self-references in README/docs are fine.
+  - '\bToken[_\s]Triage\b'
+  - '\btoken-triage\b'

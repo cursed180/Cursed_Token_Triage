@@ -259,5 +259,5 @@ don't have it installed locally, skip those hooks with
 
 ---
 
-Maintained by Ryan Doubrava — I run paid fleet audits with interpretation and
-recommendations: ryan@doubravaconsulting.com
+Maintained by [Ryan Doubrava](https://cursedagentic.com/). Want the audit run
+and interpreted for you: [setup.cursedagentic.com](https://setup.cursedagentic.com/).

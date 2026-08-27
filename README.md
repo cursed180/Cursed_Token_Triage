@@ -13,11 +13,11 @@ to a SaaS dashboard for compliance reasons, this is built for you.
 
 ## Field study: 30 days of real spend
 
-I pointed `token-triage` at my own fleet for a month — **34,533 turns, $11,737**
-in API-equivalent cost — and the shape was the surprise: **92.5% of every token
+I pointed `token-triage` at my own fleet for a month: **34,533 turns, $11,737**
+in API-equivalent cost. The shape was the surprise. **92.5% of every token
 was a cache *read*** (the accumulated context, re-read on every turn), while the
 prompts I actually type were **0.17%**. The run also caught the tool pricing its
-own most-expensive model at **$0** — the bug that became the thesis.
+own most-expensive model at **$0**, the bug that became the thesis.
 
 Full writeup, with the by-bucket and by-model numbers:
 **[STUDY.md](STUDY.md)**.
@@ -27,11 +27,12 @@ Full writeup, with the by-bucket and by-model numbers:
 - **Total spend** in USD across your activity, broken out by model tier (Opus /
   Sonnet / Haiku) and by token bucket (input, cache write, cache read, output).
 - **Top projects by cost** with per-project cache hit ratio and session counts.
-- **Hottest 5-hour windows** — sliding-window detection so the periods that
+- **Hottest 5-hour windows.** Sliding-window detection so the periods that
   align with Anthropic Max billing blocks pop out, not just calendar days.
-- **Model breakdown** — cost share and call share per model, so you can tell at
-  a glance whether your routing matches your intent.
-- **Ranked findings** — opinionated callouts for the patterns that most often
+- **Model breakdown.** Cost share and call share per model, so you can tell at
+  a glance whether your routing matches your intent. Models the rates table
+  cannot price are flagged **(unpriced)** instead of silently costing $0.00.
+- **Ranked findings.** Opinionated callouts for the patterns that most often
   drive surprise bills:
   - Opus calls with short outputs (the textbook Sonnet-fits-here case)
   - Low cache-hit ratios on high-spend projects
@@ -46,7 +47,7 @@ A full report against a synthetic dataset lives at
 ## Install
 
 `token-triage` ships as a single Python package with **zero runtime
-dependencies** beyond the standard library. Not on PyPI yet — install straight
+dependencies** beyond the standard library. Not on PyPI yet; install straight
 from GitHub with `pipx` (recommended) or `pip`:
 
 ```bash
@@ -102,8 +103,23 @@ A rates file looks like:
 ```
 
 Any model not in the override falls back to the built-in defaults. Published
-rates change often — pin yours with `--rates` rather than trusting the
+rates change often; pin yours with `--rates` rather than trusting the
 built-ins to stay current.
+
+Three guards keep stale pricing visible instead of silent:
+
+1. Every report header prints the as-of date of the built-in table.
+2. Models the table cannot price are flagged **(unpriced)** in the report and
+   warned about on stderr. Add `--strict` to turn that into exit code `3` for
+   CI gates.
+3. A weekly `rates-drift` GitHub Actions job in this repo checks the models
+   listed in Anthropic's current comparison table against the built-ins and
+   files an issue on any mismatch, including when the check itself cannot run.
+   Legacy rows outside that table are not covered by the job; verify those
+   against the pricing page when you depend on them.
+
+The drift check runs in this repo's CI, never on your machine. The installed
+package still makes no network calls.
 
 ### Useful flags
 
@@ -115,6 +131,7 @@ built-ins to stay current.
 | `--format markdown\|json` | `markdown` | Markdown for humans, JSON for machines. |
 | `--output PATH` | stdout | Write to a file instead. |
 | `--rates rates.json` | built-ins | Override per-model pricing. |
+| `--strict` | off | Exit `3` if any model has calls but no rates entry (for CI gates). |
 | `--anon` | off | Replace project paths and session ids with stable opaque hashes. |
 | `--top N` | 10 | Number of projects in the top-projects table. |
 | `--windows N` | 5 | Number of 5-hour windows to surface. |
@@ -158,18 +175,21 @@ tokens. Each bucket is multiplied by the matching per-million rate for the
 model that turn used. Costs are summed per project, per session, per 5h
 sliding window, and per model.
 
-The built-in rate table is [Anthropic's published API
-pricing](https://docs.anthropic.com/en/docs/about-claude/pricing) at the time
-the package was cut. Rates change; pin yours with `--rates`.
+The built-in rate table mirrors [Anthropic's published API
+pricing](https://platform.claude.com/docs/en/about-claude/pricing). Its as-of
+date ships as `RATES_AS_OF` in `token_triage/pricing.py` and prints in every
+report header. Rates change; pin yours with `--rates`. The weekly `rates-drift`
+workflow re-checks the models in Anthropic's current comparison table and
+opens an issue when they disagree.
 
 ## What it doesn't do (yet)
 
-- Cursor / Continue / other agent harnesses — only Claude Code's `*.jsonl`
+- Cursor / Continue / other agent harnesses. Only Claude Code's `*.jsonl`
   format is parsed today.
-- Per-tool-call breakdown — the analysis is at the per-turn level.
-- Trend charts or a dashboard — the output is a flat report.
+- Per-tool-call breakdown. The analysis is at the per-turn level.
+- Trend charts or a dashboard. The output is a flat report.
 
-PRs welcome on any of these — [open an issue](https://github.com/cursed180/Cursed_Token_Triage/issues)
+PRs welcome on any of these; [open an issue](https://github.com/cursed180/Cursed_Token_Triage/issues)
 to discuss before sending a large one.
 
 ## Prior art

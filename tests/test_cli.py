@@ -445,3 +445,92 @@ def test_main_no_false_positive_warning_with_rates_override(
     # Opus 4.7 is in the merged rates table (even at $0), so lookup_rates returns
     # non-None and the guardrail must NOT fire for it.
     assert "warning" not in captured.err.lower()
+
+
+# ---- --strict on unpriced models (issue #1) ----
+
+
+def _unpriced_projects_dir(tmp_path: Path) -> Path:
+    """One project with a single call on a model no rates table knows."""
+    from tests.conftest import write_session_jsonl
+
+    root = tmp_path / "projects"
+    record = {
+        "type": "assistant",
+        "sessionId": "s-unpriced",
+        "timestamp": "2026-04-01T12:00:00Z",
+        "message": {
+            "model": "claude-fable-6",
+            "role": "assistant",
+            "usage": {
+                "input_tokens": 1_000,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 0,
+                "output_tokens": 500,
+            },
+        },
+    }
+    write_session_jsonl(root / "-home-user-mystery" / "01.jsonl", [record])
+    return root
+
+
+def test_main_warns_but_exits_zero_on_unpriced_by_default(tmp_path: Path, capsys) -> None:
+    rc = main(["--projects-dir", str(_unpriced_projects_dir(tmp_path))])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "claude-fable-6" in captured.err
+    assert "warning" in captured.err.lower()
+
+
+def test_main_strict_exits_3_on_unpriced(tmp_path: Path, capsys) -> None:
+    rc = main(["--projects-dir", str(_unpriced_projects_dir(tmp_path)), "--strict"])
+    assert rc == 3
+    captured = capsys.readouterr()
+    assert "unpriced" in captured.err
+    # Strict mode refuses to emit the report itself.
+    assert "# Token Triage Report" not in captured.out
+
+
+def test_main_strict_exits_zero_when_all_priced(
+    synthetic_projects_dir: Path, tmp_path: Path
+) -> None:
+    out_path = tmp_path / "out.md"
+    rc = main(
+        [
+            "--projects-dir",
+            str(synthetic_projects_dir),
+            "--strict",
+            "--output",
+            str(out_path),
+        ]
+    )
+    assert rc == 0
+    assert out_path.exists()
+
+
+def test_main_strict_respects_rates_override(tmp_path: Path) -> None:
+    """--rates that prices the unknown model must clear the --strict gate."""
+    rates_path = tmp_path / "rates.json"
+    rates_path.write_text(
+        json.dumps(
+            {
+                "claude-fable-6": {
+                    "input": 12.0,
+                    "cache_write_5m": 15.0,
+                    "cache_write_1h": 24.0,
+                    "cache_read": 1.2,
+                    "output": 60.0,
+                }
+            }
+        )
+    )
+    rc = main(
+        [
+            "--projects-dir",
+            str(_unpriced_projects_dir(tmp_path)),
+            "--strict",
+            "--rates",
+            str(rates_path),
+        ]
+    )
+    assert rc == 0

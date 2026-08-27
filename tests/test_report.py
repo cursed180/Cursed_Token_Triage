@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from tests.conftest import make_record
 from token_triage.analyze import build_report
+from token_triage.pricing import RATES_AS_OF
 from token_triage.report import render_json, render_markdown
 
 
@@ -50,3 +51,18 @@ def test_render_markdown_handles_empty() -> None:
     md = render_markdown(report)
     assert "# Token Triage Report" in md
     assert "_No usage records found._" in md
+
+
+def test_markdown_shows_rates_as_of_and_unpriced_section() -> None:
+    report = build_report([make_record(model="claude-fable-6")])
+    md = render_markdown(report)
+    assert f"Built-in rates as of: {RATES_AS_OF}" in md
+    assert "**(unpriced)**" in md
+    assert "## Unpriced models" in md
+    assert "`claude-fable-6`: 1 call(s)" in md
+
+
+def test_markdown_omits_unpriced_section_when_all_priced() -> None:
+    md = render_markdown(build_report([make_record(model="claude-sonnet-4-6")]))
+    assert "## Unpriced models" not in md
+    assert "(unpriced)" not in md

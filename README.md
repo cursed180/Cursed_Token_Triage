@@ -112,9 +112,11 @@ Three guards keep stale pricing visible instead of silent:
 2. Models the table cannot price are flagged **(unpriced)** in the report and
    warned about on stderr. Add `--strict` to turn that into exit code `3` for
    CI gates.
-3. A weekly `rates-drift` GitHub Actions job in this repo diffs the built-ins
-   against Anthropic's published pricing and files an issue on any mismatch,
-   including when the check itself cannot run.
+3. A weekly `rates-drift` GitHub Actions job in this repo checks the models
+   listed in Anthropic's current comparison table against the built-ins and
+   files an issue on any mismatch, including when the check itself cannot run.
+   Legacy rows outside that table are not covered by the job; verify those
+   against the pricing page when you depend on them.
 
 The drift check runs in this repo's CI, never on your machine. The installed
 package still makes no network calls.
@@ -177,8 +179,8 @@ The built-in rate table mirrors [Anthropic's published API
 pricing](https://platform.claude.com/docs/en/about-claude/pricing). Its as-of
 date ships as `RATES_AS_OF` in `token_triage/pricing.py` and prints in every
 report header. Rates change; pin yours with `--rates`. The weekly `rates-drift`
-workflow re-checks the table against the published doc and opens an issue when
-they disagree.
+workflow re-checks the models in Anthropic's current comparison table and
+opens an issue when they disagree.
 
 ## What it doesn't do (yet)
 

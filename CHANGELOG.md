@@ -19,10 +19,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   preserved (#1).
 - `--strict` CLI flag: exit code `3` when any model has calls but no rates
   entry, for CI gates that must not trust totals that understate spend (#1).
-- Weekly `rates-drift` GitHub Actions job comparing `MODEL_RATES` against
-  Anthropic's published pricing doc; files or updates a tracking issue on
-  drift and on fetch/parse failure. CI-only - the shipped package still makes
-  no network calls (#1).
+- Weekly `rates-drift` GitHub Actions job comparing the models in Anthropic's
+  published comparison table against `MODEL_RATES`; files or updates a tracking
+  issue on drift and on fetch/parse failure. CI-only - the shipped package
+  still makes no network calls (#1).
 
 - Per-bucket USD cost keys (`input_cost_usd`, `cache_write_cost_usd`,
   `cache_read_cost_usd`, `output_cost_usd`) in the `totals` section of the

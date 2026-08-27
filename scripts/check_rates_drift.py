@@ -25,7 +25,12 @@ from token_triage.pricing import MODEL_RATES, RATES_AS_OF, normalize_model_id
 
 DOC_URL = "https://platform.claude.com/docs/en/models/overview.md"
 PRICE_RE = re.compile(r"\$([0-9.]+)\s*/\s*input MTok,\s*\$([0-9.]+)\s*/\s*output MTok")
-CACHE_READ_MULTIPLIER = 0.10  # documented: cache reads cost 10% of base input
+# Documented rule: cache reads cost 10% of base input. Known exception shape:
+# some legacy rates round off that rule (haiku-3 ships cache_read $0.03, the
+# derived value is $0.025). Only models in the doc's comparison table are
+# checked here, so a cache-read flag on a future model may be rounding, not
+# drift - adjudicate against the pricing page before updating the table.
+CACHE_READ_MULTIPLIER = 0.10
 TOLERANCE = 1e-6
 
 

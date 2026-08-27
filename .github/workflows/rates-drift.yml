@@ -30,7 +30,9 @@ jobs:
         run: python scripts/check_rates_drift.py --out drift-body.md
 
       - name: File or update drift issue
-        if: failure()
+        # Scoped to the drift step so a checkout/setup infra failure does not
+        # file a false "drift" issue (the run itself still shows red).
+        if: failure() && steps.drift.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -1,0 +1,47 @@
+name: rates-drift
+
+# Weekly guard: compare the shipped MODEL_RATES table against Anthropic's
+# published pricing doc. Runs in CI only; the shipped package never fetches
+# anything (issue #1). Fails loud on drift AND on fetch/parse errors, and
+# files (or updates) a tracking issue so drift cannot pass silently.
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check rates drift
+        id: drift
+        run: python scripts/check_rates_drift.py --out drift-body.md
+
+      - name: File or update drift issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Rates drift: shipped table vs published pricing"
+          body_file="drift-body.md"
+          if [ ! -f "$body_file" ]; then
+            echo "Drift check failed before writing a body; see the run log." > "$body_file"
+          fi
+          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file "$body_file"
+          else
+            gh issue create --title "$title" --label bug --body-file "$body_file"
+          fi

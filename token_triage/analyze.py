@@ -20,6 +20,7 @@ from typing import Any
 from token_triage.parser import UsageRecord
 from token_triage.pricing import (
     MODEL_FAMILY_RANK,
+    RATES_AS_OF,
     ModelRates,
     cost_breakdown_of,
     cost_of,
@@ -184,6 +185,7 @@ def model_breakdown(
                 "cost_share": round(cost_by_model[model] / total_cost, 4),
                 "call_count": calls_by_model[model],
                 "call_share": round(calls_by_model[model] / total_calls, 4),
+                "unpriced": lookup_rates(model, rates_table) is None,
             }
         )
     return rows
@@ -399,6 +401,11 @@ def build_report(
 
     return {
         "schema": "token-triage/1",
+        "rates_as_of": RATES_AS_OF,
+        "unpriced_models": [
+            {"model": row["model"], "call_count": row["call_count"]}
+            for row in zero_metered_models(breakdown, rates_table)
+        ],
         "totals": {
             "record_count": len(records),
             "total_cost_usd": round(total_cost, 4),

@@ -89,6 +89,12 @@ def build_parser() -> argparse.ArgumentParser:
         "(useful for screenshots / sharing).",
     )
     parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit with code 3 if any model has calls but no rates entry "
+        "(default: warn on stderr and continue).",
+    )
+    parser.add_argument(
         "--top",
         type=int,
         default=10,
@@ -149,12 +155,20 @@ def main(argv: list[str] | None = None) -> int:
         window_n=args.windows,
     )
 
-    for row in zero_metered_models(report["model_breakdown"], rates_table):
+    unpriced = zero_metered_models(report["model_breakdown"], rates_table)
+    for row in unpriced:
         print(
             f"warning: model '{row['model']}' has {row['call_count']} call(s) but $0.00 cost"
-            " — pricing may be missing (pass --rates)",
+            " - pricing may be missing (pass --rates)",
             file=sys.stderr,
         )
+    if args.strict and unpriced:
+        print(
+            f"error: --strict set and {len(unpriced)} model(s) are unpriced; refusing to"
+            " report totals that understate spend",
+            file=sys.stderr,
+        )
+        return 3
 
     rendered = render_json(report) if args.format == "json" else render_markdown(report)
 

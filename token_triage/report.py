@@ -30,6 +30,9 @@ def render_markdown(report: dict[str, Any]) -> str:
     if totals.get("first_event") and totals.get("last_event"):
         lines.append(f"_Window: {totals['first_event']} → {totals['last_event']}_")
         lines.append("")
+    if report.get("rates_as_of"):
+        lines.append(f"_Built-in rates as of: {report['rates_as_of']} (override with --rates)_")
+        lines.append("")
 
     lines.append("## Totals")
     lines.append("")
@@ -95,8 +98,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.append("| --- | --- | --- | --- | --- | --- |")
         for row in report["model_breakdown"]:
             lines.append(
-                "| `{model}` | {family} | {cost} | {cs} | {calls} | {ks} |".format(
+                "| `{model}`{flag} | {family} | {cost} | {cs} | {calls} | {ks} |".format(
                     model=row["model"],
+                    flag=" **(unpriced)**" if row.get("unpriced") else "",
                     family=row.get("family") or "—",
                     cost=_fmt_usd(row["cost_usd"]),
                     cs=_fmt_pct(row["cost_share"]),
@@ -107,6 +111,19 @@ def render_markdown(report: dict[str, Any]) -> str:
     else:
         lines.append("_No model breakdown available._")
     lines.append("")
+
+    if report.get("unpriced_models"):
+        lines.append("## Unpriced models")
+        lines.append("")
+        lines.append(
+            "These models have calls but no entry in the rates table, so they are "
+            "counted at $0.00 and the totals above understate real spend. "
+            "Pass --rates to price them."
+        )
+        lines.append("")
+        for row in report["unpriced_models"]:
+            lines.append(f"- `{row['model']}`: {_fmt_int(row['call_count'])} call(s)")
+        lines.append("")
 
     lines.append("## Findings")
     lines.append("")

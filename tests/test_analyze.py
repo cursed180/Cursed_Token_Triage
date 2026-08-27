@@ -14,6 +14,7 @@ from token_triage.analyze import (
     top_projects,
     zero_metered_models,
 )
+from token_triage.pricing import RATES_AS_OF
 
 
 @pytest.fixture
@@ -338,3 +339,30 @@ def test_zero_metered_models_does_not_flag_frontier_models() -> None:
     report = build_report(records)
     flagged = zero_metered_models(report["model_breakdown"])
     assert flagged == []
+
+
+# ---- Unpriced marker + rates_as_of in the report (issue #1) ----
+# "claude-fable-6" is the next-generation shape of the #11 bug class: no
+# opus/sonnet/haiku token, no table row, so it must surface as unpriced.
+
+
+def test_breakdown_marks_unpriced_model() -> None:
+    records = [
+        make_record(model="claude-fable-6", input_tokens=1_000, output_tokens=500),
+        make_record(model="claude-sonnet-4-6", input_tokens=1_000, output_tokens=500),
+    ]
+    by_model = {row["model"]: row for row in model_breakdown(records)}
+    assert by_model["claude-fable-6"]["unpriced"] is True
+    assert by_model["claude-sonnet-4-6"]["unpriced"] is False
+
+
+def test_report_carries_rates_as_of_and_unpriced_models() -> None:
+    records = [make_record(model="claude-fable-6", input_tokens=1_000, output_tokens=500)]
+    report = build_report(records)
+    assert report["rates_as_of"] == RATES_AS_OF
+    assert report["unpriced_models"] == [{"model": "claude-fable-6", "call_count": 1}]
+
+
+def test_report_unpriced_models_empty_when_all_priced() -> None:
+    report = build_report([make_record(model="claude-sonnet-4-6")])
+    assert report["unpriced_models"] == []

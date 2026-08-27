@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
 
 from token_triage.pricing import (
+    FAMILY_FALLBACK,
     MODEL_RATES,
+    RATES_AS_OF,
     ModelRates,
     cost_of,
     family_of,
@@ -187,3 +190,36 @@ def test_frontier_model_cost_is_nonzero(model: str) -> None:
         output_tokens=1_000_000,
     )
     assert cost > 0.0
+
+
+# ---- Current-generation rows + as-of date (issue #1) ----
+
+
+def test_rates_as_of_is_iso_date() -> None:
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", RATES_AS_OF)
+
+
+@pytest.mark.parametrize(
+    "model, expected_input, expected_output, expected_cache_read",
+    [
+        ("claude-opus-5", 5.0, 25.0, 0.50),
+        ("claude-sonnet-5", 2.0, 10.0, 0.20),
+    ],
+)
+def test_current_generation_lookup_returns_exact_rates(
+    model: str, expected_input: float, expected_output: float, expected_cache_read: float
+) -> None:
+    rates = lookup_rates(model)
+    assert rates is not None
+    assert rates.input == expected_input
+    assert rates.output == expected_output
+    assert rates.cache_read == expected_cache_read
+
+
+def test_sonnet_5_does_not_inherit_fallback_rates() -> None:
+    """Without an explicit row, the sonnet family fallback would price Sonnet 5 at
+    Sonnet 4.6 rates ($3 / $15), a 50% overestimate. Lock the exact row in."""
+    rates = lookup_rates("claude-sonnet-5")
+    assert rates is not None
+    assert rates.input != FAMILY_FALLBACK["sonnet"].input
+    assert rates.input == 2.0

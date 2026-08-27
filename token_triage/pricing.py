@@ -21,6 +21,10 @@ class ModelRates:
     output: float
 
 
+# Date the shipped table was last verified against Anthropic's published pricing.
+# Surfaced in report headers so a stale table is visible, not silent.
+RATES_AS_OF = "2026-08-27"
+
 # Canonical model -> rates. Family fallback handles versions not listed here.
 MODEL_RATES: dict[str, ModelRates] = {
     # Frontier tier -- Fable 5 / Mythos 5 ($10 / $50). These have no
@@ -28,7 +32,9 @@ MODEL_RATES: dict[str, ModelRates] = {
     # if they aren't listed explicitly they silently price at $0.
     "claude-fable-5": ModelRates(10.0, 12.5, 20.0, 1.00, 50.0),
     "claude-mythos-5": ModelRates(10.0, 12.5, 20.0, 1.00, 50.0),
-    # Opus 4.5+ tier ($5 / $25)
+    # Opus 5 / Opus 4.5+ tier ($5 / $25). Opus 5 must be listed explicitly:
+    # the family fallback would price it correctly today only by coincidence.
+    "claude-opus-5": ModelRates(5.0, 6.25, 10.0, 0.50, 25.0),
     "claude-opus-4-8": ModelRates(5.0, 6.25, 10.0, 0.50, 25.0),
     "claude-opus-4-7": ModelRates(5.0, 6.25, 10.0, 0.50, 25.0),
     "claude-opus-4-6": ModelRates(5.0, 6.25, 10.0, 0.50, 25.0),
@@ -36,6 +42,9 @@ MODEL_RATES: dict[str, ModelRates] = {
     # Older Opus 4 tier ($15 / $75)
     "claude-opus-4-1": ModelRates(15.0, 18.75, 30.0, 1.50, 75.0),
     "claude-opus-4": ModelRates(15.0, 18.75, 30.0, 1.50, 75.0),
+    # Sonnet 5 ($2 / $10). Must be listed explicitly: the sonnet family fallback
+    # carries Sonnet 4.6 rates ($3 / $15), a 50% overestimate for this model.
+    "claude-sonnet-5": ModelRates(2.0, 2.5, 4.0, 0.20, 10.0),
     # Sonnet 4 family
     "claude-sonnet-4-6": ModelRates(3.0, 3.75, 6.0, 0.30, 15.0),
     "claude-sonnet-4-5": ModelRates(3.0, 3.75, 6.0, 0.30, 15.0),

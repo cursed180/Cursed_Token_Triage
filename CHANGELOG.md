@@ -8,6 +8,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Explicit rate rows for `claude-opus-5` ($5 / $25) and `claude-sonnet-5`
+  ($2 / $10). Sonnet 5 previously priced through the sonnet family fallback at
+  Sonnet 4.6 rates ($3 / $15), a 50% overestimate (#1).
+- `RATES_AS_OF` date on the built-in table, surfaced as `rates_as_of` in the
+  JSON report and as a "Built-in rates as of" line in the markdown header (#1).
+- Unpriced-model surfacing in the report itself: an `unpriced` flag per
+  `model_breakdown` row, a top-level `unpriced_models` list in the JSON schema,
+  and an "Unpriced models" markdown section. Additive - existing fields are
+  preserved (#1).
+- `--strict` CLI flag: exit code `3` when any model has calls but no rates
+  entry, for CI gates that must not trust totals that understate spend (#1).
+- Weekly `rates-drift` GitHub Actions job comparing `MODEL_RATES` against
+  Anthropic's published pricing doc; files or updates a tracking issue on
+  drift and on fetch/parse failure. CI-only - the shipped package still makes
+  no network calls (#1).
+
 - Per-bucket USD cost keys (`input_cost_usd`, `cache_write_cost_usd`,
   `cache_read_cost_usd`, `output_cost_usd`) in the `totals` section of the
   `token-triage/1` JSON schema.  Additive — all existing fields are preserved.

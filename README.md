@@ -279,5 +279,7 @@ don't have it installed locally, skip those hooks with
 
 ---
 
-Maintained by [Ryan Doubrava](https://cursedagentic.com/). Want the audit run
-and interpreted for you: [setup.cursedagentic.com](https://setup.cursedagentic.com/).
+Maintained by [Ryan Doubrava](https://cursedagentic.com/). Want this installed on
+your repo with burn triage included: [setup.cursedagentic.com](https://setup.cursedagentic.com/).
+Want the 4-6 hour burn audit run and interpreted for you: ask via
+[cursedagentic.com/about](https://cursedagentic.com/about/).
